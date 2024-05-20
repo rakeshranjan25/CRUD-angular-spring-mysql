@@ -1,0 +1,141 @@
+<div class="m-5 mt-4">
+  <p>
+    <mat-toolbar>
+      <span>Employee List</span>
+      <mat-icon style="margin-left: 8px">list</mat-icon>
+    </mat-toolbar>
+  </p>
+
+  <div class="mb-3">
+    <!-- Your button and other content here -->
+    <button
+      mat-raised-button
+      color="accent"
+      routerLink="/employee"
+      matTooltip="Employee Form"
+    >
+      Go to Employee Form
+    </button>
+  </div>
+
+  <mat-card>
+    <mat-card-content>
+      <div class="form-group has-search mb-3" style="width: 200px">
+        <span class="fa fa-search form-control-feedback"></span>
+        <input
+          type="text"
+          class="form-control"
+          placeholder="Search..."
+          matTooltip="Search Here"
+          [(ngModel)]="searchText"
+          (input)="applyFilter()"
+          (change)="applyFilter()"
+        />
+      </div>
+
+      <table mat-table [dataSource]="dataSource" class="mat-elevation-z8">
+        <!-- Define your table columns here -->
+        <ng-container matColumnDef="serialNumber">
+          <th mat-header-cell *matHeaderCellDef>S.N.</th>
+          <td mat-cell *matCellDef="let element; let i = index">
+            {{ calculateSerialNumber(i) }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="employeeName">
+          <th mat-header-cell *matHeaderCellDef>Name</th>
+          <td mat-cell *matCellDef="let element">{{ element.employeeName }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="employeeContactNumber">
+          <th mat-header-cell *matHeaderCellDef>Contact</th>
+          <td mat-cell *matCellDef="let element">
+            {{ element.employeeContactNumber }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="employeeAddress">
+          <th mat-header-cell *matHeaderCellDef>Address</th>
+          <td mat-cell *matCellDef="let element">
+            {{ element.employeeAddress }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="employeeDepartment">
+          <th mat-header-cell *matHeaderCellDef>Department</th>
+          <td mat-cell *matCellDef="let element">
+            {{ element.employeeDepartment }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="employeeGender">
+          <th mat-header-cell *matHeaderCellDef>Gender</th>
+          <td mat-cell *matCellDef="let element">
+            {{ element.employeeGender }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="employeeSkills">
+          <th mat-header-cell *matHeaderCellDef>Skills</th>
+          <td mat-cell *matCellDef="let element">
+            {{ element.employeeSkills }}
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="file">
+          <th mat-header-cell *matHeaderCellDef>Attached File</th>
+          <td mat-cell *matCellDef="let element">
+            <button
+              *ngIf="element.employeeFile"
+              mat-icon-button
+              style="color: #28C76F;"
+              matTooltip="Downloal Attached File"
+              (click)="downloadEmployeeFile(element.employeeId, element.employeeFile)">
+              <mat-icon>file_present</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="edit">
+          <th mat-header-cell *matHeaderCellDef> </th>
+          <td mat-cell *matCellDef="let element">
+            <button
+              mat-icon-button color="primary"
+              matTooltip="Edit Employee Data"
+              (click)="updateEmployee(element.employeeId)">
+                  <mat-icon>edit</mat-icon>
+              </button>
+          </td>
+      </ng-container>
+
+      <ng-container matColumnDef="delete">
+        <th mat-header-cell *matHeaderCellDef> </th>
+        <td mat-cell *matCellDef="let element">
+            <button mat-icon-button color="warn" matTooltip="Delete Employee Data"
+            (click)="deleteEmployee(element.employeeId)">
+                <mat-icon>delete</mat-icon>
+            </button>
+        </td>
+    </ng-container>
+
+        <!-- Define the order of columns to be displayed -->
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+      </table>
+
+      <!-- MatPaginator -->
+      <mat-paginator
+        [length]="totalItems"
+        [pageSize]="pageSize"
+        [pageSizeOptions]="[5, 10, 15, 20]"
+        (page)="onPageChange($event)"
+        class="custom-paginator"
+      >
+      </mat-paginator>
+    </mat-card-content>
+  </mat-card>
+</div>
+
+<div class="mb-">
+  <mat-divider></mat-divider>
+</div>
