@@ -1,9 +1,13 @@
 import { Component, OnInit } from '@angular/core';
-import { Employee } from '../employee.model';
+import { Employee } from '../Models/employee.model'; 
+import { Department } from '../Models/department.model'; 
+import { Gender } from '../Models/gender.model'; 
+import { Skill } from '../Models/skill.model'; 
 import { NgForm } from '@angular/forms';
 import { EmployeeService } from '../services/employee.service';
-import { HttpErrorResponse } from '@angular/common/http';
+import { MasterDataService } from '../services/master-data.service';
 import { ActivatedRoute, Router } from '@angular/router';
+import { HttpErrorResponse } from '@angular/common/http';
 
 @Component({
   selector: 'app-employee',
@@ -13,36 +17,61 @@ import { ActivatedRoute, Router } from '@angular/router';
 export class EmployeeComponent implements OnInit {
 
   isCreateEmployee: boolean = true;
-  employee: any;
-  skills: string[] = [];
-  selectedFile: File | null = null; // Add this line
+  employee: Employee = {
+    employeeId: 0,
+    employeeName: '',
+    employeeContactNumber: '',
+    employeeAddress: '',
+    employeeGender: { id: 0, name: '' },
+    employeeDepartment: { id: 0, name: '' },
+    employeeSkills: []
+  };
+  departments: Department[] = [];
+  genders: Gender[] = [];
+  skills: Skill[] = [];
+  selectedSkills: Set<number> = new Set<number>();
+  selectedFile: File | null = null;
 
   constructor(
     private employeeService: EmployeeService,
+    private masterDataService: MasterDataService,
     private router: Router,
     private activatedRoute: ActivatedRoute
   ) {}
 
   ngOnInit(): void {
-    this.employee = this.activatedRoute.snapshot.data['employee'];
-    console.log(this.employee);
-
-    if (this.employee && this.employee.employeeId > 0) {
-      this.isCreateEmployee = false;
-      if (this.employee.employeeSkills != '') {
-        this.skills = this.employee.employeeSkills.split(',');
+    this.loadMasterData();
+    const resolvedEmployee = this.activatedRoute.snapshot.data['employee'];
+    if (resolvedEmployee) {
+      this.employee = resolvedEmployee;
+      if (this.employee.employeeId && this.employee.employeeId > 0) {
+        this.isCreateEmployee = false;
+        this.employee.employeeSkills.forEach(skill => this.selectedSkills.add(skill.id));
       }
-    } else {
-      this.isCreateEmployee = true;
     }
   }
 
-  checkSkills(skill: string): boolean {
-    return this.employee.employeeSkills != null && this.employee.employeeSkills.includes(skill);
+  loadMasterData() {
+    this.masterDataService.getAllDepartments().subscribe(data => {
+      this.departments = data;
+    });
+
+    this.masterDataService.getAllGenders().subscribe(data => {
+      this.genders = data;
+    });
+
+    this.masterDataService.getAllSkills().subscribe(data => {
+      this.skills = data;
+    });
   }
 
-  checkGender(gender: string): boolean {
-    return this.employee.employeeGender != null && this.employee.employeeGender === gender;
+  onSkillsChanges(event: any, skill: Skill): void {
+    if (event.checked) {
+      this.selectedSkills.add(skill.id);
+    } else {
+      this.selectedSkills.delete(skill.id);
+    }
+    this.employee.employeeSkills = Array.from(this.selectedSkills).map(id => this.skills.find(skill => skill.id === id)!);
   }
 
   onSubmit(employeeForm: NgForm): void {
@@ -55,7 +84,7 @@ export class EmployeeComponent implements OnInit {
 
   saveEmployee(employeeForm: NgForm): void {
     if (this.isCreateEmployee) {
-      this.employeeService.saveEmployee(this.employee, this.selectedFile).subscribe( // Update this line
+      this.employeeService.saveEmployee(this.employee, this.selectedFile).subscribe(
         {
           next: (res: Employee) => {
             console.log(res);
@@ -64,53 +93,59 @@ export class EmployeeComponent implements OnInit {
             this.router.navigate(["/employee-list"]);
           },
           error: (err: HttpErrorResponse) => {
-            console.log(err);
+            console.error('Error:', err);
+            console.error('Error message:', err.message);
           }
         }
       );
     } else {
-      this.employeeService.updateEmployee(this.employee, this.selectedFile).subscribe( // Update this line
+      this.employeeService.updateEmployee(this.employee, this.selectedFile).subscribe(
         {
           next: (res: Employee) => {
             this.router.navigate(["/employee-list"]);
           },
           error: (err: HttpErrorResponse) => {
-            console.log(err);
+            console.error('Error:', err);
+            console.error('Error message:', err.message);
           }
         }
       );
     }
   }
 
-  selectGender(gender: string): void {
-    this.employee.employeeGender = gender;
-  }
-
-  onSkillsChanges(event: any): void {
-    if (event.checked) {
-      this.skills.push(event.source.value);
-    } else {
-      this.skills = this.skills.filter(skill => skill !== event.source.value);
-    }
-    this.employee.employeeSkills = this.skills.join(',');
-  }
-
   clearForm(employeeForm: NgForm): void {
     employeeForm.resetForm({
-      employeeId: this.employee.employeeId, // Preserve employeeId
+      employeeId: this.employee.employeeId,
       employeeName: '',
       employeeContactNumber: '',
       employeeAddress: '',
-      employeeDepartment: '',
-      employeeSkills: '',
-      employeeGender: ''
+      employeeGender: { id: 0, name: '' },
+      employeeDepartment: { id: 0, name: '' },
+      employeeSkills: []
     });
-    this.skills = [];
-    this.selectedFile = null; // Add this line
+    this.selectedSkills.clear();
+    this.selectedFile = null;
   }
 
-  // Add this method
+  selectGender(gender: Gender): void {
+    this.employee.employeeGender = gender;
+  }
+
   onFileSelected(event: any): void {
-    this.selectedFile = event.target.files[0];
+    const file: File = event.target.files[0];
+    const maxFileSize = 100 * 1024; // 200KB in bytes
+
+    if (file.size > maxFileSize) {
+      alert('File size is large, Please upload a file under 100KB');
+      window.location.reload(); // Refresh the page
+    } else {
+      this.selectedFile = file;
+    }
+  }
+
+  getSelectedSkills(): string[] {
+    return Array.from(this.selectedSkills)
+      .map(id => this.skills.find(skill => skill.id === id)?.name)
+      .filter(name => name) as string[];
   }
 }

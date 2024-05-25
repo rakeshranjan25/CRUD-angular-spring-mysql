@@ -2,6 +2,9 @@ package com.example.crud.service;
 
 import com.example.crud.dao.EmployeeDao;
 import com.example.crud.entity.Employee;
+import com.example.crud.entity.Department;
+import com.example.crud.entity.Gender;
+import com.example.crud.entity.Skill;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
@@ -27,6 +30,15 @@ public class EmployeeService {
     @Autowired
     private EmployeeDao employeeDao;
 
+    @Autowired
+    private DepartmentService departmentService;
+
+    @Autowired
+    private GenderService genderService;
+
+    @Autowired
+    private SkillService skillService;
+
     private final Path fileStorageLocation = Paths.get("./uploads").toAbsolutePath().normalize();
 
     public EmployeeService() {
@@ -41,6 +53,18 @@ public class EmployeeService {
         if (employee.getStatus() == null) {
             employee.setStatus("active");
         }
+
+        // Fetch and set Department
+        Department department = departmentService.getDepartmentById(employee.getEmployeeDepartment().getId());
+        employee.setEmployeeDepartment(department);
+
+        // Fetch and set Gender
+        Gender gender = genderService.getGenderById(employee.getEmployeeGender().getId());
+        employee.setEmployeeGender(gender);
+
+        // Fetch and set Skills
+        List<Skill> skills = skillService.getSkillsByIds(employee.getEmployeeSkills().stream().map(Skill::getId).toList());
+        employee.setEmployeeSkills(skills);
 
         Employee savedEmployee = employeeDao.save(employee);
 
@@ -77,10 +101,23 @@ public class EmployeeService {
         existingEmployee.setEmployeeName(employee.getEmployeeName());
         existingEmployee.setEmployeeContactNumber(employee.getEmployeeContactNumber());
         existingEmployee.setEmployeeAddress(employee.getEmployeeAddress());
-        existingEmployee.setEmployeeGender(employee.getEmployeeGender());
-        existingEmployee.setEmployeeDepartment(employee.getEmployeeDepartment());
-        existingEmployee.setEmployeeSkills(employee.getEmployeeSkills());
-        existingEmployee.setStatus(employee.getStatus());
+
+        // Fetch and set Department
+        Department department = departmentService.getDepartmentById(employee.getEmployeeDepartment().getId());
+        existingEmployee.setEmployeeDepartment(department);
+
+        // Fetch and set Gender
+        Gender gender = genderService.getGenderById(employee.getEmployeeGender().getId());
+        existingEmployee.setEmployeeGender(gender);
+
+        // Fetch and set Skills
+        List<Skill> skills = skillService.getSkillsByIds(employee.getEmployeeSkills().stream().map(Skill::getId).toList());
+        existingEmployee.setEmployeeSkills(skills);
+
+        // Check and set status only if it's not null
+        if (employee.getStatus() != null) {
+            existingEmployee.setStatus(employee.getStatus());
+        }
 
         if (file != null && !file.isEmpty()) {
             String fileName = storeFile(file, employee.getEmployeeName(), employee.getEmployeeId());
@@ -91,7 +128,17 @@ public class EmployeeService {
     }
 
     public Page<Employee> searchEmployees(String keyword, int page, int size) {
-        return employeeDao.search(keyword, PageRequest.of(page, size));
+        Pageable pageable = PageRequest.of(page, size);
+        return employeeDao.search(keyword, pageable);
+    }
+
+    public Page<Employee> filterEmployeesByDepartmentGenderSkill(String department, String gender, String skill, int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        return employeeDao.filterByDepartmentGenderSkill(department, gender, skill, pageable);
+    }
+
+    public List<Employee> getFilteredEmployees(String department, String gender, String skill) {
+        return employeeDao.filterByDepartmentGenderSkill(department, gender, skill);
     }
 
     public ResponseEntity<Resource> downloadEmployeeFile(Integer employeeId) {

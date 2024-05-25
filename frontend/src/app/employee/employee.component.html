@@ -1,91 +1,87 @@
 <div class="container">
-  <mat-card>
+    <mat-card>
       <mat-card-content>
-          <p>
-              <mat-toolbar>
-                  <span>Employee Form</span>
-                  <mat-icon style="margin-left: 8px">edit_note</mat-icon>
-              </mat-toolbar>
-          </p>
+        <p>
+          <mat-toolbar>
+            <span>Employee Form</span>
+            <mat-icon style="margin-left: 8px">edit_note</mat-icon>
+          </mat-toolbar>
+        </p>
+  
+        <div align="right">
+          <button mat-raised-button color="accent" routerLink="/employee-list" matTooltip="Employee List">Go to Employee List</button>
+        </div>
+  
+        <div class="card p-5 mt-2">
+          <form #employeeForm="ngForm" (ngSubmit)="onSubmit(employeeForm)">
+            <mat-form-field appearance="outline">
+              <mat-label>Employee Name</mat-label>
+              <input matInput placeholder="Employee Name" name="employeeName" [(ngModel)]="employee.employeeName" required>
+              <mat-icon matSuffix>person</mat-icon>
+              <mat-error *ngIf="employeeForm.controls['employeeName']?.invalid && employeeForm.controls['employeeName']?.touched">Employee Name is required</mat-error>
+            </mat-form-field>
+  
+            <mat-form-field appearance="outline">
+              <mat-label>Contact Number</mat-label>
+              <input matInput placeholder="Contact Number" name="employeeContactNumber" [(ngModel)]="employee.employeeContactNumber">
+              <mat-icon matSuffix>call</mat-icon>
+            </mat-form-field>
+  
+            <mat-form-field appearance="outline">
+                <mat-label>Address</mat-label>
+                <input matInput placeholder="Address" name="employeeAddress" [(ngModel)]="employee.employeeAddress">
+                <mat-icon matSuffix>apartment</mat-icon>
+              </mat-form-field>
+    
+              <mat-form-field>
+                <mat-label>Choose your department</mat-label>
+                <mat-select name="employeeDepartment" [(ngModel)]="employee.employeeDepartment.id">
+                  <mat-option *ngFor="let department of departments" [value]="department.id">
+                    {{ department.name }}
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
+    
+              <div>
+                <label>Gender</label>
+                <mat-radio-group [(ngModel)]="employee.employeeGender.id" name="employeeGender">
+                  <mat-radio-button *ngFor="let gender of genders" [value]="gender.id">
+                    {{ gender.name }}
+                  </mat-radio-button>
+                </mat-radio-group>
+              </div>
 
-          <div align="right">
-              <button mat-raised-button color="accent" routerLink="/employee-list" matTooltip="Employee List">Go to Employee List</button>
+              <div class="mt-3">
+                <div class="p-3 border rounded" style="background-color: #f8f9fa;">
+                    <strong class="text-secondary">Selected Skills : </strong> {{ getSelectedSkills() }}
+                </div>
+            </div>
+    
+              <div class="mt-3">
+                <label>Skills</label>
+                <section class="example-section">
+                  <mat-checkbox *ngFor="let skill of skills" (change)="onSkillsChanges($event, skill)" class="example-margin" [checked]="selectedSkills.has(skill.id)">
+                    {{ skill.name }}
+                  </mat-checkbox>
+                </section>
+              </div>
+    
+              <div class="mb-3 mt-3">
+                <label for="formFile" class="form-label">File Upload</label>
+                <input type="file" class="form-control mt-2" id="formFile" name="employeeFile" (change)="onFileSelected($event)">
+                <small class="form-text m-2" style="color: red;">Max file size is 100KB.</small>
+              </div>
+    
+              <mat-divider></mat-divider>
+    
+              <div class="text-center mt-3">
+                <button mat-raised-button class="m-2" type="button" (click)="clearForm(employeeForm)" matTooltip="Clear form field" matTooltipPosition="above">Clear</button>
+                <button mat-raised-button color="primary" class="m-2" type="submit" matTooltip="Save Data" matTooltipPosition="above">Save</button>
+              </div>
+            </form>
           </div>
-
-          <div class="card p-5 mt-2">
-              <form #employeeForm="ngForm" (ngSubmit)="onSubmit(employeeForm)">
-                  <!-- <mat-form-field appearance="outline">
-                      <mat-label>Employee Id</mat-label>
-                      <input matInput placeholder="Employee Id" name="employeeId" [(ngModel)]="employee.employeeId" disabled>
-                      <mat-icon matSuffix>sentiment_very_satisfied</mat-icon>
-                  </mat-form-field> -->
-
-                  <mat-form-field appearance="outline">
-                      <mat-label>Employee Name</mat-label>
-                      <input matInput placeholder="Employee Name" name="employeeName" [(ngModel)]="employee.employeeName" required>
-                      <mat-icon matSuffix>person</mat-icon>
-                      <mat-error *ngIf="employeeForm.controls['employeeName']?.invalid && employeeForm.controls['employeeName']?.touched">Employee Name is required</mat-error>
-                  </mat-form-field>
-
-                  <mat-form-field appearance="outline">
-                      <mat-label>Contact Number</mat-label>
-                      <input matInput placeholder="Contact Number" name="employeeContactNumber" [(ngModel)]="employee.employeeContactNumber">
-                      <mat-icon matSuffix>call</mat-icon>
-                  </mat-form-field>
-
-                  <mat-form-field appearance="outline">
-                      <mat-label>Address</mat-label>
-                      <input matInput placeholder="Address" name="employeeAddress" [(ngModel)]="employee.employeeAddress">
-                      <mat-icon matSuffix>apartment</mat-icon>
-                  </mat-form-field>
-
-                  <mat-form-field>
-                      <mat-label>Choose your department</mat-label>
-                      <mat-select name="employeeDepartment" [(ngModel)]="employee.employeeDepartment">
-                          <mat-option value="Developer">Developer</mat-option>
-                          <mat-option value="Tester">Tester</mat-option>
-                          <mat-option value="Network">Network</mat-option>
-                      </mat-select>
-                  </mat-form-field>
-
-                  <div>
-                      <label>Gender</label>
-                      <mat-radio-group aria-label="Select an option">
-                          <mat-radio-button [checked]="checkGender('M')" (click)="selectGender('M')" value="M">M</mat-radio-button>
-                          <mat-radio-button [checked]="checkGender('F')" (click)="selectGender('F')" value="F">F</mat-radio-button>
-                      </mat-radio-group>
-                  </div>
-
-                  <mat-form-field appearance="outline" class="mt-2">
-                      <mat-label>Employee Skills</mat-label>
-                      <input matInput placeholder="Employee Skills" name="employeeSkills" [(ngModel)]="employee.employeeSkills" disabled>
-                      <mat-icon matSuffix>menu_book</mat-icon>
-                  </mat-form-field>
-
-                  <div>
-                      <label>Skills</label>
-                      <section class="example-section">
-                          <mat-checkbox (change)="onSkillsChanges($event)" value="Java" class="example-margin" [checked]="checkSkills('Java')">Java</mat-checkbox>
-                          <mat-checkbox (change)="onSkillsChanges($event)" value="Angular" class="example-margin" [checked]="checkSkills('Angular')">Angular</mat-checkbox>
-                          <mat-checkbox (change)="onSkillsChanges($event)" value="Spring Boot" class="example-margin" [checked]="checkSkills('Spring Boot')">Spring Boot</mat-checkbox>
-                          <mat-checkbox (change)="onSkillsChanges($event)" value="Selenium" class="example-margin" [checked]="checkSkills('Selenium')">Selenium</mat-checkbox>
-                          <mat-checkbox (change)="onSkillsChanges($event)" value="AWS" class="example-margin" [checked]="checkSkills('AWS')">AWS</mat-checkbox>
-                      </section>
-                  </div>
-
-                  <div class="mb-3 mt-3">
-                    <label for="formFile" class="form-label">File</label>
-                    <input type="file" class="form-control" id="formFile" name="employeeFile" (change)="onFileSelected($event)">
-                  </div>                  
-
-                  <mat-divider></mat-divider>
-
-                  <div class="text-center mt-3">
-                      <button mat-raised-button class="m-2" type="button" (click)="clearForm(employeeForm)" matTooltip="Clear form field" matTooltipPosition="above">Clear</button>
-                      <button mat-raised-button color="primary" class="m-2" type="submit" matTooltip="Save Data" matTooltipPosition="above">Save</button>
-                  </div>
-              </form>
-          </div>
-      </mat-card-content>
-  </mat-card>
-</div>
+        </mat-card-content>
+      </mat-card>
+    </div>
+    
+  

@@ -11,6 +11,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.List;
+
 @RestController
 @CrossOrigin("http://localhost:4200")
 public class EmployeeController {
@@ -18,17 +20,17 @@ public class EmployeeController {
     @Autowired
     private EmployeeService employeeService;
 
-    // CRUD operations
-
     @PostMapping("/employees")
     public ResponseEntity<Employee> saveEmployee(
             @RequestParam("employee") String employeeString,
             @RequestParam(value = "file", required = false) MultipartFile file) {
         try {
-            Employee employee = new ObjectMapper().readValue(employeeString, Employee.class);
+            ObjectMapper objectMapper = new ObjectMapper();
+            Employee employee = objectMapper.readValue(employeeString, Employee.class);
             Employee savedEmployee = employeeService.saveEmployee(employee, file);
             return new ResponseEntity<>(savedEmployee, HttpStatus.CREATED);
         } catch (Exception e) {
+            e.printStackTrace();  // Add this line to log the error
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
     }
@@ -77,9 +79,28 @@ public class EmployeeController {
         return new ResponseEntity<>(searchResult, HttpStatus.OK);
     }
 
+    @GetMapping("/filter")
+    public ResponseEntity<Page<Employee>> filterEmployees(
+            @RequestParam(required = false) String department,
+            @RequestParam(required = false) String gender,
+            @RequestParam(required = false) String skill,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        Page<Employee> filteredResult = employeeService.filterEmployeesByDepartmentGenderSkill(department, gender, skill, page, size);
+        return new ResponseEntity<>(filteredResult, HttpStatus.OK);
+    }
+
+    @GetMapping("/filter/all")
+    public ResponseEntity<List<Employee>> getFilteredEmployees(
+            @RequestParam(required = false) String department,
+            @RequestParam(required = false) String gender,
+            @RequestParam(required = false) String skill) {
+        List<Employee> filteredResult = employeeService.getFilteredEmployees(department, gender, skill);
+        return new ResponseEntity<>(filteredResult, HttpStatus.OK);
+    }
+
     @GetMapping("/employees/{employeeId}/file")
     public ResponseEntity<Resource> downloadEmployeeFile(@PathVariable Integer employeeId) {
         return employeeService.downloadEmployeeFile(employeeId);
     }
 }
-

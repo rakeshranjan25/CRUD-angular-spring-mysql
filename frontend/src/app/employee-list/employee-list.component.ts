@@ -1,11 +1,14 @@
 import { Component, OnInit, ViewChild } from '@angular/core';
 import { EmployeeService } from '../services/employee.service';
-import { Employee } from '../employee.model';
+import { MasterDataService } from '../services/master-data.service';
+import { Employee } from '../Models/employee.model'; 
 import { HttpErrorResponse } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { MatPaginator, PageEvent } from '@angular/material/paginator';
-import { saveAs } from 'file-saver';
-
+import { MatSelectChange } from '@angular/material/select';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 
 @Component({
   selector: 'app-employee-list',
@@ -13,25 +16,29 @@ import { saveAs } from 'file-saver';
   styleUrls: ['./employee-list.component.css']
 })
 export class EmployeeListComponent implements OnInit {
-
   dataSource: Employee[] = [];
-  originalDataSource: Employee[] = []; // Store original data source
-  filteredDataSource: Employee[] = []; // Store filtered data
-  displayedColumns: string[] = ['serialNumber', 'employeeName', 'employeeContactNumber', 'employeeAddress', 'employeeDepartment', 'employeeGender', 'employeeSkills', 'file', 'edit', 'delete']; // Added 'file' column
+  displayedColumns: string[] = ['serialNumber', 'employeeName', 'employeeContactNumber', 'employeeAddress', 'employeeDepartment', 'employeeGender', 'employeeSkills', 'file', 'edit', 'delete'];
 
-  // Paginator properties
   pageSize = 5;
   totalItems = 0;
   currentPage = 0;
 
-  searchText: string = ''; // Holds the value of the search input
+  searchText: string = '';
+  selectedDepartment: string = '';
+  selectedGender: string = '';
+  selectedSkill: string = '';
+
+  departments: any[] = [];
+  genders: any[] = [];
+  skills: any[] = [];
 
   @ViewChild(MatPaginator) paginator!: MatPaginator;
 
-  constructor(private employeeService: EmployeeService, private router: Router) {}
+  constructor(private employeeService: EmployeeService, private masterDataService: MasterDataService, private router: Router) {}
 
   ngOnInit(): void {
     this.getEmployeeList();
+    this.getMasterData();
   }
 
   updateEmployee(employeeId: number): void {
@@ -40,9 +47,8 @@ export class EmployeeListComponent implements OnInit {
 
   deleteEmployee(employeeId: number): void {
     this.employeeService.deleteEmployee(employeeId).subscribe({
-      next: (res) => {
-        console.log(res);
-        this.getEmployeeList(); // Refresh the employee list after deletion
+      next: () => {
+        this.getEmployeeList();
       },
       error: (err: HttpErrorResponse) => {
         console.log(err);
@@ -51,14 +57,61 @@ export class EmployeeListComponent implements OnInit {
   }
 
   getEmployeeList(): void {
-    this.employeeService.getEmployees(this.currentPage, this.pageSize).subscribe({
-      next: (res: any) => {
-        this.dataSource = res.content;
-        this.originalDataSource = res.content.slice(); // Store original data
-        this.totalItems = res.totalElements;
+    if (this.searchText) {
+      this.employeeService.searchEmployees(this.searchText, this.currentPage, this.pageSize).subscribe({
+        next: (res: any) => {
+          this.dataSource = res.content;
+          this.totalItems = res.totalElements;
+        },
+        error: (err: HttpErrorResponse) => {
+          console.log(err);
+        }
+      });
+    } else if (this.selectedDepartment || this.selectedGender || this.selectedSkill) {
+      this.employeeService.getPaginatedFilteredEmployees(this.selectedDepartment, this.selectedGender, this.selectedSkill, this.currentPage, this.pageSize).subscribe({
+        next: (res: any) => {
+          this.dataSource = res.content;
+          this.totalItems = res.totalElements;
+        },
+        error: (err: HttpErrorResponse) => {
+          console.log(err);
+        }
+      });
+    } else {
+      this.employeeService.getEmployees(this.currentPage, this.pageSize).subscribe({
+        next: (res: any) => {
+          this.dataSource = res.content;
+          this.totalItems = res.totalElements;
+        },
+        error: (err: HttpErrorResponse) => {
+          console.log(err);
+        }
+      });
+    }
+  }
 
-        // Initialize filteredDataSource with original data
-        this.filteredDataSource = this.originalDataSource.slice();
+  getMasterData(): void {
+    this.masterDataService.getAllDepartments().subscribe({
+      next: (data) => {
+        this.departments = data;
+      },
+      error: (err: HttpErrorResponse) => {
+        console.log(err);
+      }
+    });
+
+    this.masterDataService.getAllGenders().subscribe({
+      next: (data) => {
+        this.genders = data;
+      },
+      error: (err: HttpErrorResponse) => {
+        console.log(err);
+      }
+    });
+
+    this.masterDataService.getAllSkills().subscribe({
+      next: (data) => {
+        this.skills = data;
       },
       error: (err: HttpErrorResponse) => {
         console.log(err);
@@ -69,7 +122,7 @@ export class EmployeeListComponent implements OnInit {
   onPageChange(event: PageEvent): void {
     this.currentPage = event.pageIndex;
     this.pageSize = event.pageSize;
-    this.getEmployeeList(); // Fetch data for the new page
+    this.getEmployeeList();
   }
 
   calculateSerialNumber(index: number): number {
@@ -77,25 +130,8 @@ export class EmployeeListComponent implements OnInit {
   }
 
   applyFilter(): void {
-    let filterValue = this.searchText.trim().toLowerCase(); // Convert input to lowercase
-
-    // If filter value is empty, reset the dataSource to the original data
-    if (!filterValue) {
-      this.currentPage = 0; // Reset currentPage to fetch data from the beginning
-      this.getEmployeeList(); // Fetch data with pagination
-      return;
-    }
-
-    // Perform search with filter value
-    this.employeeService.searchEmployees(filterValue, this.currentPage, this.pageSize).subscribe({
-      next: (res: any) => {
-        this.dataSource = res.content;
-        this.totalItems = res.totalElements;
-      },
-      error: (err: HttpErrorResponse) => {
-        console.log(err);
-      }
-    });
+    this.currentPage = 0;
+    this.getEmployeeList();
   }
 
   downloadEmployeeFile(employeeId: number, fileName: string): void {
@@ -113,5 +149,61 @@ export class EmployeeListComponent implements OnInit {
       console.log('Error downloading file:', error);
     });
   }
-  
+
+  getSkillsAsString(employee: Employee): string {
+    return employee.employeeSkills.map(skill => skill.name).join(', ');
+  }
+
+  onDepartmentChange(event: MatSelectChange): void {
+    this.selectedDepartment = event.value;
+    this.applyFilter();
+  }
+
+  onGenderChange(event: MatSelectChange): void {
+    this.selectedGender = event.value;
+    this.applyFilter();
+  }
+
+  onSkillChange(event: MatSelectChange): void {
+    this.selectedSkill = event.value;
+    this.applyFilter();
+  }
+
+  downloadPdf(): void {
+    this.employeeService.getFilteredEmployees(this.selectedDepartment, this.selectedGender, this.selectedSkill).subscribe((employees: Employee[]) => {
+      const doc = new jsPDF();
+      const data = employees.map((employee, index) => [
+        index + 1,
+        employee.employeeName,
+        employee.employeeContactNumber,
+        employee.employeeAddress,
+        employee.employeeDepartment.name,
+        employee.employeeGender.name,
+        this.getSkillsAsString(employee),
+      ]);
+      autoTable(doc, {
+        head: [['S.N.', 'Name', 'Contact', 'Address', 'Department', 'Gender', 'Skills']],
+        body: data,
+      });
+      doc.save('employee-list.pdf');
+    });
+  }
+
+  downloadExcel(): void {
+    this.employeeService.getFilteredEmployees(this.selectedDepartment, this.selectedGender, this.selectedSkill).subscribe((employees: Employee[]) => {
+      const data = employees.map((employee, index) => ({
+        'S.N.': index + 1,
+        'Name': employee.employeeName,
+        'Contact': employee.employeeContactNumber,
+        'Address': employee.employeeAddress,
+        'Department': employee.employeeDepartment.name,
+        'Gender': employee.employeeGender.name,
+        'Skills': this.getSkillsAsString(employee),
+      }));
+      const ws: XLSX.WorkSheet = XLSX.utils.json_to_sheet(data);
+      const wb: XLSX.WorkBook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Employees');
+      XLSX.writeFile(wb, 'employee-list.xlsx');
+    });
+  }
 }

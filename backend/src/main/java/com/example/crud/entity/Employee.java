@@ -2,6 +2,8 @@ package com.example.crud.entity;
 
 import jakarta.persistence.*;
 
+import java.util.List;
+
 @Entity
 @Table(name = "employee")
 public class Employee {
@@ -19,17 +21,29 @@ public class Employee {
 
     private String employeeAddress;
 
-    private String employeeGender;
+    @ManyToOne
+    @JoinColumn(name = "employee_gender_id")
+    private Gender employeeGender;
 
-    private String employeeDepartment;
+    @ManyToOne
+    @JoinColumn(name = "employee_department_id")
+    private Department employeeDepartment;
 
-    private String employeeSkills;
+    @ManyToMany
+    @JoinTable(
+            name = "employee_skills",
+            joinColumns = @JoinColumn(name = "employee_id"),
+            inverseJoinColumns = @JoinColumn(name = "skill_id")
+    )
+    private List<Skill> employeeSkills;
 
     @Column(name = "employee_file")
     private String employeeFile;
 
     public Employee() {
     }
+
+    // Getters and Setters
 
     public Integer getEmployeeId() {
         return employeeId;
@@ -71,27 +85,27 @@ public class Employee {
         this.employeeAddress = employeeAddress;
     }
 
-    public String getEmployeeGender() {
+    public Gender getEmployeeGender() {
         return employeeGender;
     }
 
-    public void setEmployeeGender(String employeeGender) {
+    public void setEmployeeGender(Gender employeeGender) {
         this.employeeGender = employeeGender;
     }
 
-    public String getEmployeeDepartment() {
+    public Department getEmployeeDepartment() {
         return employeeDepartment;
     }
 
-    public void setEmployeeDepartment(String employeeDepartment) {
+    public void setEmployeeDepartment(Department employeeDepartment) {
         this.employeeDepartment = employeeDepartment;
     }
 
-    public String getEmployeeSkills() {
+    public List<Skill> getEmployeeSkills() {
         return employeeSkills;
     }
 
-    public void setEmployeeSkills(String employeeSkills) {
+    public void setEmployeeSkills(List<Skill> employeeSkills) {
         this.employeeSkills = employeeSkills;
     }
 

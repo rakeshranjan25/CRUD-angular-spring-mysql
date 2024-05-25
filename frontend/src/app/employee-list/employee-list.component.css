@@ -19,3 +19,30 @@
   pointer-events: none;
   color: #aaa;
 }
+
+.dropdown-container {
+  display: flex;
+  flex-direction: row;
+  gap: 20px;
+}
+
+.icon-container {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  margin-left: auto;
+}
+
+.pdf-icon mat-icon {
+  color: red;
+}
+
+.excel-icon mat-icon {
+  color: green;
+}
+
+.icon-display {
+  transform: scale(1.5);
+}
+
+

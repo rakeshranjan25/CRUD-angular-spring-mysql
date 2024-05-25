@@ -6,40 +6,63 @@
     </mat-toolbar>
   </p>
 
-  <div class="mb-3">
-    <!-- Your button and other content here -->
-    <button
-      mat-raised-button
-      color="accent"
-      routerLink="/employee"
-      matTooltip="Employee Form"
-    >
-      Go to Employee Form
-    </button>
-  </div>
-
   <mat-card>
     <mat-card-content>
+
+      <div class="mb-3">
+        <button mat-raised-button color="accent" routerLink="/employee" matTooltip="Employee Form">Go to Employee Form</button>
+      </div>
+
       <div class="form-group has-search mb-3" style="width: 200px">
         <span class="fa fa-search form-control-feedback"></span>
-        <input
-          type="text"
-          class="form-control"
-          placeholder="Search..."
-          matTooltip="Search Here"
-          [(ngModel)]="searchText"
-          (input)="applyFilter()"
-          (change)="applyFilter()"
-        />
+        <input type="text" class="form-control" placeholder="Search..." matTooltip="Search Here" [(ngModel)]="searchText" (input)="applyFilter()" (change)="applyFilter()" />
+      </div>
+
+      <div class="dropdown-container">
+        <div class="form-group mb-3" style="width: 200px">
+          <mat-form-field appearance="fill">
+            <mat-label>Department</mat-label>
+            <mat-select [(ngModel)]="selectedDepartment" (selectionChange)="onDepartmentChange($event)">
+              <mat-option value="">All</mat-option>
+              <mat-option *ngFor="let department of departments" [value]="department.name">{{ department.name }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <div class="form-group mb-3" style="width: 200px">
+          <mat-form-field appearance="fill">
+            <mat-label>Gender</mat-label>
+            <mat-select [(ngModel)]="selectedGender" (selectionChange)="onGenderChange($event)">
+              <mat-option value="">All</mat-option>
+              <mat-option *ngFor="let gender of genders" [value]="gender.name">{{ gender.name }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <div class="form-group mb-3" style="width: 200px">
+          <mat-form-field appearance="fill">
+            <mat-label>Skill</mat-label>
+            <mat-select [(ngModel)]="selectedSkill" (selectionChange)="onSkillChange($event)">
+              <mat-option value="">All</mat-option>
+              <mat-option *ngFor="let skill of skills" [value]="skill.name">{{ skill.name }}</mat-option>
+            </mat-select>
+          </mat-form-field>
+        </div>
+
+        <div class="icon-container">
+          <button mat-icon-button (click)="downloadPdf()" matTooltip="Download PDF" class="pdf-icon">
+            <mat-icon class="icon-display">picture_as_pdf</mat-icon>
+          </button>
+          <button mat-icon-button (click)="downloadExcel()" matTooltip="Download Excel" class="excel-icon">
+            <mat-icon class="icon-display">description</mat-icon>
+          </button>
+        </div>
       </div>
 
       <table mat-table [dataSource]="dataSource" class="mat-elevation-z8">
-        <!-- Define your table columns here -->
         <ng-container matColumnDef="serialNumber">
           <th mat-header-cell *matHeaderCellDef>S.N.</th>
-          <td mat-cell *matCellDef="let element; let i = index">
-            {{ calculateSerialNumber(i) }}
-          </td>
+          <td mat-cell *matCellDef="let element; let i = index">{{ calculateSerialNumber(i) }}</td>
         </ng-container>
 
         <ng-container matColumnDef="employeeName">
@@ -49,48 +72,33 @@
 
         <ng-container matColumnDef="employeeContactNumber">
           <th mat-header-cell *matHeaderCellDef>Contact</th>
-          <td mat-cell *matCellDef="let element">
-            {{ element.employeeContactNumber }}
-          </td>
+          <td mat-cell *matCellDef="let element">{{ element.employeeContactNumber }}</td>
         </ng-container>
 
         <ng-container matColumnDef="employeeAddress">
           <th mat-header-cell *matHeaderCellDef>Address</th>
-          <td mat-cell *matCellDef="let element">
-            {{ element.employeeAddress }}
-          </td>
+          <td mat-cell *matCellDef="let element">{{ element.employeeAddress }}</td>
         </ng-container>
 
         <ng-container matColumnDef="employeeDepartment">
           <th mat-header-cell *matHeaderCellDef>Department</th>
-          <td mat-cell *matCellDef="let element">
-            {{ element.employeeDepartment }}
-          </td>
+          <td mat-cell *matCellDef="let element">{{ element.employeeDepartment.name }}</td>
         </ng-container>
 
         <ng-container matColumnDef="employeeGender">
           <th mat-header-cell *matHeaderCellDef>Gender</th>
-          <td mat-cell *matCellDef="let element">
-            {{ element.employeeGender }}
-          </td>
+          <td mat-cell *matCellDef="let element">{{ element.employeeGender.name }}</td>
         </ng-container>
 
         <ng-container matColumnDef="employeeSkills">
           <th mat-header-cell *matHeaderCellDef>Skills</th>
-          <td mat-cell *matCellDef="let element">
-            {{ element.employeeSkills }}
-          </td>
+          <td mat-cell *matCellDef="let element">{{ getSkillsAsString(element) }}</td>
         </ng-container>
 
         <ng-container matColumnDef="file">
           <th mat-header-cell *matHeaderCellDef>Attached File</th>
           <td mat-cell *matCellDef="let element">
-            <button
-              *ngIf="element.employeeFile"
-              mat-icon-button
-              style="color: #28C76F;"
-              matTooltip="Downloal Attached File"
-              (click)="downloadEmployeeFile(element.employeeId, element.employeeFile)">
+            <button *ngIf="element.employeeFile" mat-icon-button style="color: #28C76F;" matTooltip="Download Attached File" (click)="downloadEmployeeFile(element.employeeId, element.employeeFile)">
               <mat-icon>file_present</mat-icon>
             </button>
           </td>
@@ -99,38 +107,26 @@
         <ng-container matColumnDef="edit">
           <th mat-header-cell *matHeaderCellDef> </th>
           <td mat-cell *matCellDef="let element">
-            <button
-              mat-icon-button color="primary"
-              matTooltip="Edit Employee Data"
-              (click)="updateEmployee(element.employeeId)">
-                  <mat-icon>edit</mat-icon>
-              </button>
-          </td>
-      </ng-container>
-
-      <ng-container matColumnDef="delete">
-        <th mat-header-cell *matHeaderCellDef> </th>
-        <td mat-cell *matCellDef="let element">
-            <button mat-icon-button color="warn" matTooltip="Delete Employee Data"
-            (click)="deleteEmployee(element.employeeId)">
-                <mat-icon>delete</mat-icon>
+            <button mat-icon-button color="primary" matTooltip="Edit Employee Data" (click)="updateEmployee(element.employeeId)">
+              <mat-icon>edit</mat-icon>
             </button>
-        </td>
-    </ng-container>
+          </td>
+        </ng-container>
 
-        <!-- Define the order of columns to be displayed -->
+        <ng-container matColumnDef="delete">
+          <th mat-header-cell *matHeaderCellDef> </th>
+          <td mat-cell *matCellDef="let element">
+            <button mat-icon-button color="warn" matTooltip="Delete Employee Data" (click)="deleteEmployee(element.employeeId)">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+
         <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
         <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
       </table>
 
-      <!-- MatPaginator -->
-      <mat-paginator
-        [length]="totalItems"
-        [pageSize]="pageSize"
-        [pageSizeOptions]="[5, 10, 15, 20]"
-        (page)="onPageChange($event)"
-        class="custom-paginator"
-      >
+      <mat-paginator [length]="totalItems" [pageSize]="pageSize" [pageSizeOptions]="[5, 10, 15, 20]" (page)="onPageChange($event)" class="custom-paginator">
       </mat-paginator>
     </mat-card-content>
   </mat-card>
