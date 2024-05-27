@@ -1,16 +1,9 @@
 {
   "version": 2,
-  "public": true,
-  "builds": [
-    {
-      "src": "dist/crud-frontend/**",
-      "use": "@vercel/static"
-    }
-  ],
   "routes": [
     {
       "src": "/(.*)",
-      "dest": "/dist/crud-frontend/index.html"
+      "dest": "/index.html"
     }
   ]
 }
