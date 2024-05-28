@@ -133,7 +133,7 @@ export class EmployeeComponent implements OnInit {
 
   onFileSelected(event: any): void {
     const file: File = event.target.files[0];
-    const maxFileSize = 100 * 1024; // 200KB in bytes
+    const maxFileSize = 100 * 1024; // 100KB in bytes
 
     if (file.size > maxFileSize) {
       alert('File size is large, Please upload a file under 100KB');
